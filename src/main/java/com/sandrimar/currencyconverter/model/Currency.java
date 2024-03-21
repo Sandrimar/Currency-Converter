@@ -30,6 +30,12 @@ public class Currency {
         this.available = available;
     }
 
+    public Currency(String code, BigDecimal value, Instant lastUpdate) {
+        this.code = code;
+        this.value = value;
+        this.lastUpdate = lastUpdate;
+    }
+
     public String getCode() {
         return code;
     }
