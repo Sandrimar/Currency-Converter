@@ -6,6 +6,7 @@ import com.sandrimar.currencyconverter.model.Currency;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Objects;
 
 public class CurrencyDTO {
 
@@ -56,5 +57,18 @@ public class CurrencyDTO {
 
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CurrencyDTO that = (CurrencyDTO) o;
+        return Objects.equals(code, that.code);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(code);
     }
 }
