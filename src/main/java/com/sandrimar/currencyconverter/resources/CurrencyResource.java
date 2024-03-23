@@ -35,4 +35,10 @@ public class CurrencyResource {
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{code}").buildAndExpand(dto.getCode()).toUri();
         return ResponseEntity.created(uri).body(dto);
     }
+
+    @PutMapping("/available")
+    public ResponseEntity<CurrencyDTO> setAvailability(@RequestBody CurrencyDTO dto) {
+        CurrencyDTO updated = service.setAvailability(dto);
+        return ResponseEntity.ok().body(updated);
+    }
 }

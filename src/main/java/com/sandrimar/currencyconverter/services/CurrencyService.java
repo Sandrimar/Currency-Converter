@@ -60,4 +60,14 @@ public class CurrencyService {
         }
         return repository.findById(code).orElseThrow(() -> new ResourceNotFoundException(code));
     }
+
+    public CurrencyDTO setAvailability(CurrencyDTO dto) {
+        Currency update = findAnyByCode(dto.getCode());
+        update.setAvailable(dto.isAvailable());
+        repository.save(update);
+        if (!update.isAvailable()) {
+            return null;
+        }
+        return new CurrencyDTO(update);
+    }
 }
