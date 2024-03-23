@@ -5,6 +5,7 @@ import com.sandrimar.currencyconverter.services.CurrencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,5 +22,11 @@ public class CurrencyResource {
     public ResponseEntity<Map<String, CurrencyDTO>> findAvailable() {
         Map<String, CurrencyDTO> available = service.findAvailable();
         return ResponseEntity.ok().body(available);
+    }
+
+    @GetMapping("/{code}")
+    public ResponseEntity<CurrencyDTO> findByCode(@PathVariable String code) {
+        CurrencyDTO c = service.findByCode(code);
+        return ResponseEntity.ok().body(c);
     }
 }
