@@ -54,7 +54,7 @@ public class CurrencyService {
         }
     }
 
-    private Currency findAnyByCode(String code) {
+    protected Currency findAnyByCode(String code) {
         if (code.isEmpty()) {
             throw new BusinessException("A moeda precisa ter um código");
         }

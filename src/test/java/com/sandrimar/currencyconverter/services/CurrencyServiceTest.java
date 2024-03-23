@@ -3,6 +3,7 @@ package com.sandrimar.currencyconverter.services;
 import com.sandrimar.currencyconverter.dto.CurrencyDTO;
 import com.sandrimar.currencyconverter.model.Currency;
 import com.sandrimar.currencyconverter.repositories.CurrencyRepository;
+import com.sandrimar.currencyconverter.services.exceptions.BusinessException;
 import com.sandrimar.currencyconverter.services.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -72,5 +74,77 @@ class CurrencyServiceTest {
         verify(repository, times(1)).findByAvailableTrueAndCode("abc");
         verifyNoMoreInteractions(repository);
         assertEquals("Recurso não encontrado! Id: abc", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should insert new currency successfully")
+    void insertCase1() {
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setCode("DTO");
+        dto.setValue(BigDecimal.TEN);
+
+        when(repository.findById(dto.getCode())).thenThrow(new ResourceNotFoundException(dto.getCode()));
+        Currency newCurrency = new Currency(dto.getCode(), dto.getValue(), Instant.now(), true);
+        CurrencyDTO result = service.insert(dto);
+
+        verify(repository, times(1)).findById(dto.getCode());
+        verify(repository, times(1)).save(newCurrency);
+        verifyNoMoreInteractions(repository);
+        assertEquals(dto, result);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when code already exists")
+    void insertCase2() {
+        Currency usd = new Currency("USD", BigDecimal.ONE, Instant.now());
+        CurrencyDTO dto = new CurrencyDTO(usd);
+        when(repository.findById("USD")).thenReturn(Optional.of(usd));
+
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.insert(dto);
+        });
+        assertEquals("Essa moeda já existe", thrown.getMessage());
+        verify(repository,times(1)).findById(dto.getCode());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when code is not valid")
+    void insertCase3() {
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setCode("");
+        dto.setValue(BigDecimal.ONE);
+
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.insert(dto);
+        });
+        assertEquals("A moeda precisa ter um código", thrown.getMessage());
+
+        dto.setCode(null);
+        thrown = assertThrows(BusinessException.class, () -> {
+            service.insert(dto);
+        });
+        assertEquals("A moeda precisa ter um código", thrown.getMessage());
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when value is not valid")
+    void insertCase4() {
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setCode("ok");
+        dto.setValue(BigDecimal.ZERO);
+
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.insert(dto);
+        });
+        assertEquals("O valor não pode ser 0 ou nulo", thrown.getMessage());
+
+        dto.setValue(null);
+        thrown = assertThrows(BusinessException.class, () -> {
+            service.insert(dto);
+        });
+        assertEquals("O valor não pode ser 0 ou nulo", thrown.getMessage());
+        verifyNoInteractions(repository);
     }
 }
