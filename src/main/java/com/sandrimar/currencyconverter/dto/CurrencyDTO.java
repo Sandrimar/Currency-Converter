@@ -32,7 +32,7 @@ public class CurrencyDTO {
     }
 
     public void setCode(String code) {
-        this.code = code;
+        this.code = sanitizeCode(code);
     }
 
     public BigDecimal getValue() {
@@ -40,7 +40,7 @@ public class CurrencyDTO {
     }
 
     public void setValue(BigDecimal value) {
-        this.value = value.stripTrailingZeros();
+        this.value = sanitizeValue(value);
     }
 
     public Instant getLastUpdate() {
@@ -57,6 +57,14 @@ public class CurrencyDTO {
 
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+
+    private String sanitizeCode(String code) {
+        return (code == null) ? "" : code.toUpperCase();
+    }
+
+    private BigDecimal sanitizeValue(BigDecimal value) {
+        return (value == null) ? BigDecimal.ZERO : value.stripTrailingZeros();
     }
 
     @Override

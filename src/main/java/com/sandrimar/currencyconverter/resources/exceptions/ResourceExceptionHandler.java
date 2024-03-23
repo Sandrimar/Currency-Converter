@@ -1,5 +1,6 @@
 package com.sandrimar.currencyconverter.resources.exceptions;
 
+import com.sandrimar.currencyconverter.services.exceptions.BusinessException;
 import com.sandrimar.currencyconverter.services.exceptions.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,15 @@ public class ResourceExceptionHandler {
         String error = "Resource Not Found";
         HttpStatus status = HttpStatus.NOT_FOUND;
         StandardError err = new StandardError(Instant.now(), status.value(), error, e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status.value()).body(err);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<StandardError> businessException(BusinessException e, HttpServletRequest request) {
+        String error = "Operation not allowed";
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        StandardError err = new StandardError(Instant.now(), status.value(),
+                error, e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(status.value()).body(err);
     }
 }
