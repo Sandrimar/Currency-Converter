@@ -14,10 +14,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -26,6 +23,9 @@ class CurrencyServiceTest {
 
     @Mock
     CurrencyRepository repository;
+
+    @Mock
+    ExternalAPIService apiService;
 
     @InjectMocks
     CurrencyService service;
@@ -104,7 +104,7 @@ class CurrencyServiceTest {
             service.insert(dto);
         });
         assertEquals("Essa moeda já existe", thrown.getMessage());
-        verify(repository,times(1)).findById(dto.getCode());
+        verify(repository, times(1)).findById(dto.getCode());
         verifyNoMoreInteractions(repository);
     }
 
@@ -200,5 +200,63 @@ class CurrencyServiceTest {
         });
         assertEquals("A moeda precisa ter um código", thrown.getMessage());
         verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should update currency value successfully")
+    void updateValueCase1() {
+        String code = "OK";
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setValue(BigDecimal.TEN);
+        Currency ok = new Currency("OK", BigDecimal.ONE, Instant.now(), false);
+
+        when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
+        when(repository.findById(code)).thenReturn(Optional.of(ok));
+        CurrencyDTO result = service.updateValue(code, dto);
+
+        verify(repository, times(1)).findById(code);
+        verify(repository, times(1)).save(ok);
+        verifyNoMoreInteractions(repository);
+        assertEquals(dto.getValue(), result.getValue());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when currency is real")
+    void updateValueCase2() {
+        String code = "USD";
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setValue(BigDecimal.TEN);
+        Currency usd = new Currency("USD", BigDecimal.ONE, Instant.now(), false);
+
+        when(apiService.getRealCurrencies()).thenReturn(List.of("USD"));
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.updateValue(code, dto);
+        });
+
+        verifyNoInteractions(repository);
+        assertEquals("Não é permitido alterar uma moeda real", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when value is not valid")
+    void updateValueCase3() {
+        String code = "OK";
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setValue(BigDecimal.ZERO);
+
+        when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.updateValue(code, dto);
+        });
+        assertEquals("O valor deve ser maior que 0", thrown.getMessage());
+
+        dto.setValue(null);
+        when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
+        thrown = assertThrows(BusinessException.class, () -> {
+            service.updateValue(code, dto);
+        });
+        assertEquals("O valor deve ser maior que 0", thrown.getMessage());
+        verifyNoInteractions(repository);
+
     }
 }
