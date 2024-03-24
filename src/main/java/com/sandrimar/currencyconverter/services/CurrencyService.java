@@ -70,4 +70,22 @@ public class CurrencyService {
         }
         return new CurrencyDTO(update);
     }
+
+    public CurrencyDTO updateValue(String code, CurrencyDTO dto) {
+        for (String real : apiService.getRealCurrencies()) {
+            if (code.toUpperCase().equals(real)) {
+                throw new BusinessException("Não é permitido alterar uma moeda real");
+            }
+        }
+        if (dto.getValue() == null || dto.getValue().equals(BigDecimal.ZERO)) {
+            throw new BusinessException("O valor deve ser maior que 0");
+        }
+
+        Currency update = findAnyByCode(code.toUpperCase());
+        update.setValue(dto.getValue());
+        update.setLastUpdate(Instant.now());
+        update.setAvailable(true);
+        repository.save(update);
+        return new CurrencyDTO(update);
+    }
 }

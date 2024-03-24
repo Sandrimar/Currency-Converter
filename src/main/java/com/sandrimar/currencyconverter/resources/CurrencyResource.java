@@ -41,4 +41,10 @@ public class CurrencyResource {
         CurrencyDTO updated = service.setAvailability(dto);
         return ResponseEntity.ok().body(updated);
     }
+
+    @PutMapping("/{code}")
+    public ResponseEntity<CurrencyDTO> updateValue(@PathVariable String code, @RequestBody CurrencyDTO dto) {
+        dto = service.updateValue(code, dto);
+        return ResponseEntity.ok().body(dto);
+    }
 }
