@@ -259,4 +259,65 @@ class CurrencyServiceTest {
         verifyNoInteractions(repository);
 
     }
+
+    @Test
+    @DisplayName("Should delete currency successfully")
+    void deleteCase1() {
+        String code = "OK";
+        Currency ok = new Currency("OK", BigDecimal.TEN, Instant.now(), true);
+
+        when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
+        when(repository.findById(code)).thenReturn(Optional.of(ok));
+        service.delete(code);
+
+        verify(apiService, times(1)).getRealCurrencies();
+        verify(repository, times(1)).findById(code);
+        verify(repository, times(1)).deleteById(code);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when currency is real")
+    void deleteCase2() {
+        String code = "USD";
+
+        when(apiService.getRealCurrencies()).thenReturn(List.of("USD"));
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.delete(code);
+        });
+
+        verifyNoInteractions(repository);
+        assertEquals("Não é permitido apagar uma moeda real", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when code is not valid")
+    void deleteCase3() {
+        String code = "";
+
+        when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.delete(code);
+        });
+        assertEquals("A moeda precisa ter um código", thrown.getMessage());
+
+        verify(apiService, times(1)).getRealCurrencies();
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when currency is not found")
+    void deleteCase4() {
+        String code = "XYZ";
+
+        when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
+        ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> {
+            service.delete(code);
+        });
+
+        verify(apiService, times(1)).getRealCurrencies();
+        verify(repository, times(1)).findById(code);
+        verifyNoMoreInteractions(repository);
+        assertEquals("Recurso não encontrado! Id: XYZ", thrown.getMessage());
+    }
 }

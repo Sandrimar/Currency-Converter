@@ -95,7 +95,7 @@ public class CurrencyService {
                 throw new BusinessException("Não é permitido apagar uma moeda real");
             }
         }
-        findByCode(code.toUpperCase());
+        findAnyByCode(code.toUpperCase());
         repository.deleteById(code.toUpperCase());
     }
 }
