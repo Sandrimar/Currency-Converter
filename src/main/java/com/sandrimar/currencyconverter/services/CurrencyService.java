@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,5 +98,23 @@ public class CurrencyService {
         }
         findAnyByCode(code.toUpperCase());
         repository.deleteById(code.toUpperCase());
+    }
+
+    public void updateRealCurrencies() {
+        List<String> realCurrenciesCode = apiService.getRealCurrencies();
+        List<Currency> realCurrencies = repository.findByCodeIn(realCurrenciesCode);
+        List<Currency> newData = apiService.getData();
+
+        Map<String, Currency> oldCurrencies = new HashMap<>();
+        for (Currency old : realCurrencies) {
+            oldCurrencies.put(old.getCode(), old);
+        }
+
+        for (Currency newCurrency : newData) {
+            Currency update = oldCurrencies.get(newCurrency.getCode());
+            update.setValue(newCurrency.getValue());
+            update.setLastUpdate(newCurrency.getLastUpdate());
+        }
+        repository.saveAll(oldCurrencies.values());
     }
 }
