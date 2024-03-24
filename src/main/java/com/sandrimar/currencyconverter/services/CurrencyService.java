@@ -88,4 +88,14 @@ public class CurrencyService {
         repository.save(update);
         return new CurrencyDTO(update);
     }
+
+    public void delete(String code) {
+        for (String real : apiService.getRealCurrencies()) {
+            if (code.toUpperCase().equals(real)) {
+                throw new BusinessException("Não é permitido apagar uma moeda real");
+            }
+        }
+        findByCode(code.toUpperCase());
+        repository.deleteById(code.toUpperCase());
+    }
 }

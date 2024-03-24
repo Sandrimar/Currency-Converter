@@ -47,4 +47,10 @@ public class CurrencyResource {
         dto = service.updateValue(code, dto);
         return ResponseEntity.ok().body(dto);
     }
+
+    @DeleteMapping("/{code}")
+    public ResponseEntity<Void> delete(@PathVariable String code) {
+        service.delete(code);
+        return ResponseEntity.noContent().build();
+    }
 }
