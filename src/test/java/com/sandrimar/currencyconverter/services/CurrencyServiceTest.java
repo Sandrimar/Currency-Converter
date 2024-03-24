@@ -147,4 +147,58 @@ class CurrencyServiceTest {
         assertEquals("O valor não pode ser 0 ou nulo", thrown.getMessage());
         verifyNoInteractions(repository);
     }
+
+    @Test
+    @DisplayName("Should update availability to true successfully")
+    void setAvailabilityCase1() {
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setCode("USD");
+        dto.setAvailable(true);
+        Currency usd = new Currency("USD", BigDecimal.ONE, Instant.now(), false);
+
+        when(repository.findById(dto.getCode())).thenReturn(Optional.of(usd));
+        CurrencyDTO result = service.setAvailability(dto);
+
+        verify(repository, times(1)).findById(dto.getCode());
+        verify(repository, times(1)).save(usd);
+        verifyNoMoreInteractions(repository);
+        assertEquals(dto, result);
+    }
+
+    @Test
+    @DisplayName("Should update availability to false and return null")
+    void setAvailabilityCase2() {
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setCode("USD");
+        dto.setAvailable(false);
+        Currency usd = new Currency("USD", BigDecimal.ONE, Instant.now(), true);
+
+        when(repository.findById(dto.getCode())).thenReturn(Optional.of(usd));
+        CurrencyDTO result = service.setAvailability(dto);
+
+        verify(repository, times(1)).findById(dto.getCode());
+        verify(repository, times(1)).save(usd);
+        verifyNoMoreInteractions(repository);
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when code is not valid")
+    void setAvailabilityCase3() {
+        CurrencyDTO dto = new CurrencyDTO();
+        dto.setCode("");
+        dto.setAvailable(false);
+
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.setAvailability(dto);
+        });
+        assertEquals("A moeda precisa ter um código", thrown.getMessage());
+
+        dto.setCode(null);
+        thrown = assertThrows(BusinessException.class, () -> {
+            service.setAvailability(dto);
+        });
+        assertEquals("A moeda precisa ter um código", thrown.getMessage());
+        verifyNoInteractions(repository);
+    }
 }
