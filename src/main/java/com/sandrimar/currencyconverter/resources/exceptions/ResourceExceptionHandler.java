@@ -1,5 +1,6 @@
 package com.sandrimar.currencyconverter.resources.exceptions;
 
+import com.sandrimar.currencyconverter.services.exceptions.BadRequestException;
 import com.sandrimar.currencyconverter.services.exceptions.BusinessException;
 import com.sandrimar.currencyconverter.services.exceptions.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,15 @@ public class ResourceExceptionHandler {
     public ResponseEntity<StandardError> businessException(BusinessException e, HttpServletRequest request) {
         String error = "Operation not allowed";
         HttpStatus status = HttpStatus.FORBIDDEN;
+        StandardError err = new StandardError(Instant.now(), status.value(),
+                error, e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status.value()).body(err);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<StandardError> badRequest(BadRequestException e, HttpServletRequest request) {
+        String error = "Bad request";
+        HttpStatus status = HttpStatus.BAD_REQUEST;
         StandardError err = new StandardError(Instant.now(), status.value(),
                 error, e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(status.value()).body(err);

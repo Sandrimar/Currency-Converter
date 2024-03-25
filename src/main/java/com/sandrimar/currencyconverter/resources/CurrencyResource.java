@@ -1,5 +1,6 @@
 package com.sandrimar.currencyconverter.resources;
 
+import com.sandrimar.currencyconverter.dto.ConversionResultDTO;
 import com.sandrimar.currencyconverter.dto.CurrencyDTO;
 import com.sandrimar.currencyconverter.services.CurrencyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,5 +53,14 @@ public class CurrencyResource {
     public ResponseEntity<Void> delete(@PathVariable String code) {
         service.delete(code);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/convert")
+    public ResponseEntity<ConversionResultDTO> convert(
+            @RequestParam(value = "from", defaultValue = "") String fromCurrency,
+            @RequestParam(value = "to", defaultValue = "") String toCurrency,
+            @RequestParam(value = "amount", defaultValue = "a") String amount) {
+        ConversionResultDTO converted = service.convert(fromCurrency, toCurrency, amount);
+        return ResponseEntity.ok().body(converted);
     }
 }

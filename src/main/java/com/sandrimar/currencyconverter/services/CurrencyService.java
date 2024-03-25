@@ -1,14 +1,18 @@
 package com.sandrimar.currencyconverter.services;
 
+import com.sandrimar.currencyconverter.dto.ConversionResultDTO;
 import com.sandrimar.currencyconverter.dto.CurrencyDTO;
 import com.sandrimar.currencyconverter.model.Currency;
 import com.sandrimar.currencyconverter.repositories.CurrencyRepository;
+import com.sandrimar.currencyconverter.services.exceptions.BadRequestException;
 import com.sandrimar.currencyconverter.services.exceptions.BusinessException;
 import com.sandrimar.currencyconverter.services.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -55,8 +59,8 @@ public class CurrencyService {
         }
     }
 
-    protected Currency findAnyByCode(String code) {
-        if (code.isEmpty()) {
+    private Currency findAnyByCode(String code) {
+        if (code == null || code.isEmpty()) {
             throw new BusinessException("A moeda precisa ter um código");
         }
         return repository.findById(code).orElseThrow(() -> new ResourceNotFoundException(code));
@@ -116,5 +120,34 @@ public class CurrencyService {
             update.setLastUpdate(newCurrency.getLastUpdate());
         }
         repository.saveAll(oldCurrencies.values());
+    }
+
+    public ConversionResultDTO convert(String fromCurrency, String toCurrency, String amount) {
+        Currency from = findAvailableCurrencyByCode(fromCurrency);
+        Currency to = findAvailableCurrencyByCode(toCurrency);
+        double doubleAmount;
+        try {
+            doubleAmount = Double.parseDouble(amount);
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("Parâmetros inválidos na requisição");
+        }
+        if (doubleAmount < 0) {
+            throw new BusinessException("A quantidade não pode ser negativa");
+        }
+
+        MathContext mc = new MathContext(10, RoundingMode.HALF_UP);
+        BigDecimal result = new BigDecimal(amount, mc).divide(from.getValue(), mc).multiply(to.getValue());
+        return new ConversionResultDTO(from.getCode(), to.getCode(), doubleAmount, result, Instant.now());
+    }
+
+    private Currency findAvailableCurrencyByCode(String code) {
+        if (code.isEmpty()) {
+            throw new BadRequestException("Parâmetros inválidos na requisição");
+        }
+        Currency c = repository.findByAvailableTrueAndCode(code);
+        if (c == null) {
+            throw new ResourceNotFoundException(code);
+        }
+        return c;
     }
 }
