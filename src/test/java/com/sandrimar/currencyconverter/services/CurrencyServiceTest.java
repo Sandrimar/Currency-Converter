@@ -14,6 +14,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -319,5 +320,33 @@ class CurrencyServiceTest {
         verify(repository, times(1)).findById(code);
         verifyNoMoreInteractions(repository);
         assertEquals("Recurso não encontrado! Id: XYZ", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should update real currencies successfully")
+    void updateRealCurrencies() {
+        List<String> codes = new ArrayList<>(Arrays.asList("USD", "BRL", "BTC"));
+        Currency oldUsd = new Currency("USD", BigDecimal.ONE, Instant.now().minus(24, ChronoUnit.HOURS));
+        Currency oldBrl = new Currency("BRL", BigDecimal.TWO, Instant.now().minus(24, ChronoUnit.HOURS));
+        List<Currency> oldCurrencies = new ArrayList<>(Arrays.asList(oldUsd, oldBrl));
+        Currency newUsd = new Currency("USD", BigDecimal.TEN, Instant.now());
+        Currency newBrl = new Currency("BRL", BigDecimal.ONE, Instant.now());
+        List<Currency> newData = new ArrayList<>(Arrays.asList(newUsd, newBrl));
+
+        when(apiService.getRealCurrencies()).thenReturn(codes);
+        when(repository.findByCodeIn(codes)).thenReturn(oldCurrencies);
+        when(apiService.getData()).thenReturn(newData);
+        service.updateRealCurrencies();
+
+        assertEquals(newUsd.getValue(), oldUsd.getValue());
+        assertEquals(newBrl.getValue(), oldBrl.getValue());
+        assertEquals(newUsd.getLastUpdate(), oldUsd.getLastUpdate());
+        assertEquals(newBrl.getLastUpdate(), oldBrl.getLastUpdate());
+        verify(apiService, times(1)).getRealCurrencies();
+        verify(repository, times(1)).findByCodeIn(codes);
+        verify(apiService, times(1)).getData();
+        verify(repository, times(1)).saveAll(anyCollection());
+        verifyNoMoreInteractions(apiService);
+        verifyNoMoreInteractions(repository);
     }
 }
