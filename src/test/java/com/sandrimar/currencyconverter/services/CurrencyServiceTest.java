@@ -1,8 +1,10 @@
 package com.sandrimar.currencyconverter.services;
 
+import com.sandrimar.currencyconverter.dto.ConversionResultDTO;
 import com.sandrimar.currencyconverter.dto.CurrencyDTO;
 import com.sandrimar.currencyconverter.model.Currency;
 import com.sandrimar.currencyconverter.repositories.CurrencyRepository;
+import com.sandrimar.currencyconverter.services.exceptions.BadRequestException;
 import com.sandrimar.currencyconverter.services.exceptions.BusinessException;
 import com.sandrimar.currencyconverter.services.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,10 +84,10 @@ class CurrencyServiceTest {
     void insertCase1() {
         CurrencyDTO dto = new CurrencyDTO();
         dto.setCode("DTO");
-        dto.setValue(BigDecimal.TEN);
+        dto.setValue(BigDecimal.TEN.toPlainString());
 
         when(repository.findById(dto.getCode())).thenThrow(new ResourceNotFoundException(dto.getCode()));
-        Currency newCurrency = new Currency(dto.getCode(), dto.getValue(), Instant.now(), true);
+        Currency newCurrency = new Currency(dto.getCode(), new BigDecimal(dto.getValue()), Instant.now(), true);
         CurrencyDTO result = service.insert(dto);
 
         verify(repository, times(1)).findById(dto.getCode());
@@ -114,7 +116,7 @@ class CurrencyServiceTest {
     void insertCase3() {
         CurrencyDTO dto = new CurrencyDTO();
         dto.setCode("");
-        dto.setValue(BigDecimal.ONE);
+        dto.setValue(BigDecimal.ONE.toPlainString());
 
         BusinessException thrown = assertThrows(BusinessException.class, () -> {
             service.insert(dto);
@@ -134,7 +136,7 @@ class CurrencyServiceTest {
     void insertCase4() {
         CurrencyDTO dto = new CurrencyDTO();
         dto.setCode("ok");
-        dto.setValue(BigDecimal.ZERO);
+        dto.setValue(BigDecimal.ZERO.toPlainString());
 
         BusinessException thrown = assertThrows(BusinessException.class, () -> {
             service.insert(dto);
@@ -208,7 +210,7 @@ class CurrencyServiceTest {
     void updateValueCase1() {
         String code = "OK";
         CurrencyDTO dto = new CurrencyDTO();
-        dto.setValue(BigDecimal.TEN);
+        dto.setValue(BigDecimal.TEN.toPlainString());
         Currency ok = new Currency("OK", BigDecimal.ONE, Instant.now(), false);
 
         when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
@@ -226,7 +228,7 @@ class CurrencyServiceTest {
     void updateValueCase2() {
         String code = "USD";
         CurrencyDTO dto = new CurrencyDTO();
-        dto.setValue(BigDecimal.TEN);
+        dto.setValue(BigDecimal.TEN.toPlainString());
         Currency usd = new Currency("USD", BigDecimal.ONE, Instant.now(), false);
 
         when(apiService.getRealCurrencies()).thenReturn(List.of("USD"));
@@ -243,7 +245,7 @@ class CurrencyServiceTest {
     void updateValueCase3() {
         String code = "OK";
         CurrencyDTO dto = new CurrencyDTO();
-        dto.setValue(BigDecimal.ZERO);
+        dto.setValue(BigDecimal.ZERO.toPlainString());
 
         when(apiService.getRealCurrencies()).thenReturn(Collections.emptyList());
         BusinessException thrown = assertThrows(BusinessException.class, () -> {
@@ -348,5 +350,70 @@ class CurrencyServiceTest {
         verify(repository, times(1)).saveAll(anyCollection());
         verifyNoMoreInteractions(apiService);
         verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("Should convert an amount between two currencies successfully")
+    void convertCase1() {
+        Currency from = new Currency("EUR", new BigDecimal("0.92"), Instant.now(), true);
+        Currency brl = new Currency("BRL", new BigDecimal("4.97"), Instant.now(), true);
+        String amount = "230";
+
+        when(repository.findByAvailableTrueAndCode("EUR")).thenReturn(from);
+        when(repository.findByAvailableTrueAndCode("BRL")).thenReturn(brl);
+        ConversionResultDTO result = service.convert("EUR", "BRL", amount);
+
+        verify(repository, times(2)).findByAvailableTrueAndCode(anyString());
+        verifyNoMoreInteractions(repository);
+        assertEquals("1242.5", result.getResult());
+    }
+
+    @Test
+    @DisplayName("Should throw error when code is not valid")
+    void convertCase2() {
+        when(repository.findByAvailableTrueAndCode("")).thenThrow(BadRequestException.class);
+
+        BadRequestException thrown = assertThrows(BadRequestException.class, () -> {
+            service.convert("", "", "10");
+        });
+
+        verifyNoInteractions(repository);
+        assertEquals("Parâmetros inválidos na requisição", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should throw error when code is not found")
+    void convertCase3() {
+        when(repository.findByAvailableTrueAndCode(anyString())).thenReturn(null);
+
+        ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> {
+            service.convert("A", "B", "10");
+        });
+
+        verify(repository, times(1)).findByAvailableTrueAndCode(anyString());
+        verifyNoMoreInteractions(repository);
+        assertEquals("Recurso não encontrado! Id: A", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should throw error when amount is not a number")
+    void convertCase4() {
+        BadRequestException thrown = assertThrows(BadRequestException.class, () -> {
+            service.convert("A", "B", "v");
+        });
+
+        verifyNoInteractions(repository);
+        assertEquals("Parâmetros inválidos na requisição", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should throw error when amount is zero")
+    void convertCase5() {
+        BusinessException thrown = assertThrows(BusinessException.class, () -> {
+            service.convert("A", "B", "0");
+        });
+
+        verifyNoInteractions(repository);
+        assertEquals("A quantidade não pode ser negativa ou 0", thrown.getMessage());
     }
 }

@@ -123,17 +123,17 @@ public class CurrencyService {
     }
 
     public ConversionResultDTO convert(String fromCurrency, String toCurrency, String amount) {
-        Currency from = findAvailableCurrencyByCode(fromCurrency);
-        Currency to = findAvailableCurrencyByCode(toCurrency);
         double doubleAmount;
         try {
             doubleAmount = Double.parseDouble(amount);
         } catch (NumberFormatException e) {
             throw new BadRequestException("Parâmetros inválidos na requisição");
         }
-        if (doubleAmount < 0) {
-            throw new BusinessException("A quantidade não pode ser negativa");
+        if (doubleAmount <= 0) {
+            throw new BusinessException("A quantidade não pode ser negativa ou 0");
         }
+        Currency from = findAvailableCurrencyByCode(fromCurrency);
+        Currency to = findAvailableCurrencyByCode(toCurrency);
 
         MathContext mc = new MathContext(10, RoundingMode.HALF_UP);
         BigDecimal result = new BigDecimal(amount, mc).divide(from.getValue(), mc).multiply(to.getValue());
