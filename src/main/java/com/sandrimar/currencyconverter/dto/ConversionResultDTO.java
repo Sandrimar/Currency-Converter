@@ -1,8 +1,9 @@
 package com.sandrimar.currencyconverter.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.sandrimar.currencyconverter.config.StringAsNumberSerializer;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 
 public class ConversionResultDTO {
@@ -10,7 +11,8 @@ public class ConversionResultDTO {
     private String fromCurrencyCode;
     private String toCurrencyCode;
     private Double amount;
-    private BigDecimal result;
+    @JsonSerialize(using = StringAsNumberSerializer.class)
+    private String result;
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "GMT")
     private Instant timestamp;
@@ -19,11 +21,11 @@ public class ConversionResultDTO {
     }
 
     public ConversionResultDTO(String fromCurrencyCode, String toCurrencyCode,
-                               Double amount, BigDecimal result, Instant timestamp) {
+                               Double amount, String result, Instant timestamp) {
         this.fromCurrencyCode = fromCurrencyCode;
         this.toCurrencyCode = toCurrencyCode;
         this.amount = amount;
-        this.result = result.stripTrailingZeros();
+        this.result = result;
         this.timestamp = timestamp;
     }
 
@@ -51,12 +53,12 @@ public class ConversionResultDTO {
         this.amount = amount;
     }
 
-    public BigDecimal getResult() {
+    public String getResult() {
         return result;
     }
 
-    public void setResult(BigDecimal result) {
-        this.result = result.stripTrailingZeros();
+    public void setResult(String result) {
+        this.result = result;
     }
 
     public Instant getTimestamp() {

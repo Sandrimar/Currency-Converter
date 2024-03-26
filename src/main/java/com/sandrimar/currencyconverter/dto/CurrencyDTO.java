@@ -2,6 +2,8 @@ package com.sandrimar.currencyconverter.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.sandrimar.currencyconverter.config.StringAsNumberSerializer;
 import com.sandrimar.currencyconverter.model.Currency;
 
 import java.math.BigDecimal;
@@ -11,7 +13,8 @@ import java.util.Objects;
 public class CurrencyDTO {
 
     private String code;
-    private BigDecimal value;
+    @JsonSerialize(using = StringAsNumberSerializer.class)
+    private String value;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "GMT")
     private Instant lastUpdate;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -22,7 +25,7 @@ public class CurrencyDTO {
 
     public CurrencyDTO(Currency obj) {
         code = obj.getCode();
-        value = obj.getValue().stripTrailingZeros();
+        value = obj.getValue().stripTrailingZeros().toPlainString();
         lastUpdate = obj.getLastUpdate();
         available = obj.isAvailable();
     }
@@ -35,11 +38,11 @@ public class CurrencyDTO {
         this.code = sanitizeCode(code);
     }
 
-    public BigDecimal getValue() {
+    public String getValue() {
         return value;
     }
 
-    public void setValue(BigDecimal value) {
+    public void setValue(String value) {
         this.value = sanitizeValue(value);
     }
 
@@ -63,8 +66,8 @@ public class CurrencyDTO {
         return (code == null) ? "" : code.toUpperCase();
     }
 
-    private BigDecimal sanitizeValue(BigDecimal value) {
-        return (value == null) ? BigDecimal.ZERO : value.stripTrailingZeros();
+    private String sanitizeValue(String value) {
+        return (value == null) ? BigDecimal.ZERO.toPlainString() : new BigDecimal(value).stripTrailingZeros().toPlainString();
     }
 
     @Override

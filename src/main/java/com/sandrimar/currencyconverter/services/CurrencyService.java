@@ -46,14 +46,14 @@ public class CurrencyService {
     }
 
     public CurrencyDTO insert(CurrencyDTO dto) {
-        if (dto.getValue() == null || dto.getValue().equals(BigDecimal.ZERO)) {
+        if (dto.getValue() == null || new BigDecimal(dto.getValue()).equals(BigDecimal.ZERO)) {
             throw new BusinessException("O valor não pode ser 0 ou nulo");
         }
         try {
             findAnyByCode(dto.getCode());
             throw new BusinessException("Essa moeda já existe");
         } catch (ResourceNotFoundException e) {
-            Currency c = new Currency(dto.getCode(), dto.getValue(), Instant.now(), true);
+            Currency c = new Currency(dto.getCode(), new BigDecimal(dto.getValue()), Instant.now(), true);
             repository.save(c);
             return new CurrencyDTO(c);
         }
@@ -82,12 +82,12 @@ public class CurrencyService {
                 throw new BusinessException("Não é permitido alterar uma moeda real");
             }
         }
-        if (dto.getValue() == null || dto.getValue().equals(BigDecimal.ZERO)) {
+        if (dto.getValue() == null || new BigDecimal(dto.getValue()).equals(BigDecimal.ZERO)) {
             throw new BusinessException("O valor deve ser maior que 0");
         }
 
         Currency update = findAnyByCode(code.toUpperCase());
-        update.setValue(dto.getValue());
+        update.setValue(new BigDecimal(dto.getValue()));
         update.setLastUpdate(Instant.now());
         update.setAvailable(true);
         repository.save(update);
@@ -137,7 +137,7 @@ public class CurrencyService {
 
         MathContext mc = new MathContext(10, RoundingMode.HALF_UP);
         BigDecimal result = new BigDecimal(amount, mc).divide(from.getValue(), mc).multiply(to.getValue());
-        return new ConversionResultDTO(from.getCode(), to.getCode(), doubleAmount, result, Instant.now());
+        return new ConversionResultDTO(from.getCode(), to.getCode(), doubleAmount, result.stripTrailingZeros().toPlainString(), Instant.now());
     }
 
     private Currency findAvailableCurrencyByCode(String code) {
