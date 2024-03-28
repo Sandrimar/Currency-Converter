@@ -105,9 +105,9 @@ public class CurrencyService {
     }
 
     public void updateRealCurrencies() {
+        List<Currency> newData = apiService.getData();
         List<String> realCurrenciesCode = apiService.getRealCurrencies();
         List<Currency> realCurrencies = repository.findByCodeIn(realCurrenciesCode);
-        List<Currency> newData = apiService.getData();
 
         Map<String, Currency> oldCurrencies = new HashMap<>();
         for (Currency old : realCurrencies) {

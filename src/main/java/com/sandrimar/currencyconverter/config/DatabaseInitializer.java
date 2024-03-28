@@ -2,6 +2,7 @@ package com.sandrimar.currencyconverter.config;
 
 import com.sandrimar.currencyconverter.model.Currency;
 import com.sandrimar.currencyconverter.repositories.CurrencyRepository;
+import com.sandrimar.currencyconverter.services.CurrencyService;
 import com.sandrimar.currencyconverter.services.ExternalAPIService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -14,11 +15,23 @@ public class DatabaseInitializer implements CommandLineRunner {
 
     @Autowired
     private CurrencyRepository repository;
+
     @Autowired
     private ExternalAPIService apiService;
 
+    @Autowired
+    private CurrencyService currencyService;
+
     @Override
     public void run(String... args) throws Exception {
+        if (!repository.existsById("USD")) {
+            initializeEmptyDatabase();
+        } else {
+            currencyService.updateRealCurrencies();
+        }
+    }
+
+    private void initializeEmptyDatabase() {
         List<Currency> currencies = apiService.getData();
         for (Currency c : currencies) {
             if (c.getCode().equals("BRL") || c.getCode().equals("BTC") ||
