@@ -1,0 +1,31 @@
+version: '3'
+services:
+  database:
+    image: mysql:8.3.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: RootPassword
+      MYSQL_USER: eu
+      MYSQL_PASSWORD: 012345
+      MYSQL_DATABASE: currencyconverter
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/currencyconverter
+      SPRING_DATASOURCE_USERNAME: eu
+      SPRING_DATASOURCE_PASSWORD: 012345
+
+volumes:
+  mysql_data:
